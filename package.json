@@ -1,0 +1,77 @@
+{
+  "name": "github-dev-dashboard-extension",
+  "displayName": "Dev Dashboard for GitHub",
+  "description": "A Control Center for your Github project in VS Code",
+  "version": "0.0.1",
+  "publisher": "local-dev",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": ["Other"],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "Dev Dashboard",
+      "properties": {
+        "githubViewer.debug": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable debug logging for the GitHub Issues & PRs extension"
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "githubViewer.openViewer",
+        "title": "GitHub Issues & PRs",
+        "category": "GitHub Viewer",
+        "icon": "$(github)"
+      },
+      {
+        "command": "githubViewer.showDebugChannel",
+        "title": "Show Debug Output",
+        "category": "GitHub Viewer"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "githubViewer.openViewer",
+          "when": "resourceScheme == file",
+          "group": "navigation"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "githubViewer.openViewer",
+          "when": "workspaceFolderCount > 0"
+        },
+        {
+          "command": "githubViewer.showDebugChannel"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.74.0",
+    "@types/node": "18.x",
+    "@typescript-eslint/eslint-plugin": "^6.4.1",
+    "@typescript-eslint/parser": "^6.4.1",
+    "eslint": "^8.47.0",
+    "typescript": "^5.1.6",
+    "@vscode/test-cli": "^0.0.9",
+    "@vscode/test-electron": "^2.3.4"
+  },
+  "dependencies": {
+    "@octokit/rest": "^19.0.7"
+  }
+}

@@ -1,16 +1,16 @@
 import * as vscode from 'vscode';
-import { GitHubViewerProvider } from './githubViewerProvider';
+import { devDashProvider } from './devDashProvider';
 import { debugChannel } from './debugChannel';
 
 export function activate(context: vscode.ExtensionContext) {
     debugChannel.info('Extension activating...');
     
-    const openViewerDisposable = vscode.commands.registerCommand('githubViewer.openViewer', () => {
+    const openViewerDisposable = vscode.commands.registerCommand('devDash.openViewer', () => {
         debugChannel.log('Opening GitHub Viewer');
-        GitHubViewerProvider.createOrShow(context.extensionUri);
+        devDashProvider.createOrShow(context.extensionUri);
     });
 
-    const showDebugDisposable = vscode.commands.registerCommand('githubViewer.showDebugChannel', () => {
+    const showDebugDisposable = vscode.commands.registerCommand('devDash.showDebugChannel', () => {
         debugChannel.show();
     });
 

@@ -10,7 +10,7 @@ export class DebugChannel {
         this.updateDebugSetting();
         
         vscode.workspace.onDidChangeConfiguration(event => {
-            if (event.affectsConfiguration('githubViewer.debug')) {
+            if (event.affectsConfiguration('devDash.debug')) {
                 this.updateDebugSetting();
             }
         });
@@ -24,7 +24,7 @@ export class DebugChannel {
     }
 
     private updateDebugSetting(): void {
-        this.isDebugEnabled = vscode.workspace.getConfiguration('githubViewer').get('debug', false);
+        this.isDebugEnabled = vscode.workspace.getConfiguration('devDash').get('debug', false);
     }
 
     public log(message: string, ...args: any[]): void {

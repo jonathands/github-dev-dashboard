@@ -9,18 +9,18 @@ Build a VSCode github dashboard with the ability to manager mostly Issues and PR
 
 # TODOs
 - [x] Support Account Switching
-- [ ] List Repos existing stashes
-- [ ] View unpushed local commit changes
-- [ ] Allow for Easy creation of Issues from this Extensions UI
+- [x] List Repos existing stashes
+- [x] View unpushed local commit changes
+- [x] Allow for Easy creation of Issues from this Extensions UI
 - [ ] Support MD on descriptions
 - [ ] Allow for Comments and answers on PRs
 - [ ] Allow copying of descriptions and comment threads as a single entitly
-- [ ] Allow checkout in github style PR branches
-- [ ] Add filtering for Issues and PRs:  search by name, owner and status
+- [x] Allow checkout in github style PR branches
+- [x] Add filtering for Issues and PRs:  search by name, owner and status
 - [ ] Allow the user to automatically see if a PR branch for the  Issue exists locally or remotely
 - [ ] Allow PR Approval, Merging and Rejection
-- [ ] Show Stars, forks, watchers 
-- [ ] Show recent activity.
+- [x] Show Stars, forks, watchers 
+- [x] Show recent activity.
 - [ ] View and run github actions
 - [ ] Fix workaround I made when resolving repo/owner from alias
 - [ ] Publish to Extension Archive

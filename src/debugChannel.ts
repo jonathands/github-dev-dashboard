@@ -6,7 +6,7 @@ export class DebugChannel {
     private isDebugEnabled: boolean = false;
 
     private constructor() {
-        this.outputChannel = vscode.window.createOutputChannel('GitHub Issues & PRs Debug');
+        this.outputChannel = vscode.window.createOutputChannel('DevDash');
         this.updateDebugSetting();
         
         vscode.workspace.onDidChangeConfiguration(event => {

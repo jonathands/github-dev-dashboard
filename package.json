@@ -1,17 +1,38 @@
 {
   "name": "github-dev-dashboard-extension",
   "displayName": "Dev Dashboard for GitHub",
-  "description": "A Control Center for your Github project in VS Code",
-  "version": "0.0.1",
-  "publisher": "local-dev",
+  "description": "A comprehensive GitHub repository management dashboard for VS Code with markdown support, PR comments, and advanced filtering",
+  "version": "0.0.3",
+  "publisher": "JonathanDS",
+  "author": {
+    "name": "Jonathan, Just a Dude"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/local-dev/github-dev-dashboard-extension.git"
+  },
+  "bugs": {
+    "url": "https://github.com/local-dev/github-dev-dashboard-extension/issues"
+  },
+  "homepage": "https://github.com/local-dev/github-dev-dashboard-extension#readme",
+  "keywords": [
+    "github",
+    "dashboard",
+    "pull requests",
+    "issues",
+    "git",
+    "repository management",
+    "code review"
+  ],
   "engines": {
     "vscode": "^1.74.0"
   },
   "categories": [
-    "Other"
+    "Other",
+    "SCM Providers"
   ],
-  "activationEvents": [],
-  "main": "./out/extension.js",
+  "main": "./dist/extension.js",
   "contributes": {
     "configuration": {
       "title": "Dev Dashboard",
@@ -23,20 +44,59 @@
         }
       }
     },
+    "views": {
+      "explorer": [
+        {
+          "id": "devDashboard",
+          "name": "GitHub Dev Dashboard",
+          "icon": "$(github)",
+          "contextualTitle": "GitHub Dev Dashboard"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "devDashboard",
+        "contents": "Welcome to GitHub Dev Dashboard!\n[Open Dashboard](command:devDash.openViewer)\n\nTo get started, make sure you're in a Git repository with a GitHub remote."
+      }
+    ],
     "commands": [
       {
         "command": "devDash.openViewer",
-        "title": "DevDash Open",
-        "category": "Dev Dashboard Open",
+        "title": "Open GitHub Dev Dashboard",
+        "category": "GitHub Dev Dashboard",
         "icon": "$(github)"
       },
       {
         "command": "devDash.showDebugChannel",
         "title": "Show Debug Output",
-        "category": "GitHub Viewer"
+        "category": "GitHub Dev Dashboard"
+      },
+      {
+        "command": "devDash.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)"
       }
     ],
     "menus": {
+      "view/title": [
+        {
+          "command": "devDash.refresh",
+          "when": "view == devDashboard",
+          "group": "navigation"
+        },
+        {
+          "command": "devDash.openViewer",
+          "when": "view == devDashboard",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "devDash.openViewer",
+          "when": "view == devDashboard"
+        }
+      ],
       "editor/title": [
         {
           "command": "devDash.openViewer",
@@ -46,20 +106,26 @@
       ],
       "commandPalette": [
         {
-          "command": "devDash.openViewer",
-          "when": "workspaceFolderCount > 0"
+          "command": "devDash.openViewer"
         },
         {
           "command": "devDash.showDebugChannel"
+        },
+        {
+          "command": "devDash.refresh",
+          "when": "false"
         }
       ]
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
-    "pretest": "npm run compile && npm run lint",
+    "vscode:prepublish": "npm run package",
+    "compile": "webpack",
+    "watch": "webpack --watch",
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run lint",
     "lint": "eslint src --ext ts",
     "test": "vscode-test"
   },
@@ -72,7 +138,10 @@
     "@vscode/test-cli": "^0.0.9",
     "@vscode/test-electron": "^2.3.4",
     "eslint": "^8.47.0",
-    "typescript": "^5.1.6"
+    "ts-loader": "^9.5.2",
+    "typescript": "^5.1.6",
+    "webpack": "^5.101.2",
+    "webpack-cli": "^6.0.1"
   },
   "dependencies": {
     "@octokit/rest": "^19.0.7",

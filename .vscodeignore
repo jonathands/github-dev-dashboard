@@ -1,0 +1,19 @@
+# Ignore development files
+src/**/*.ts
+.vscode/
+.gitignore
+tsconfig.json
+.claude/
+node_modules/
+package-lock.json
+webpack.config.js
+out/**
+
+# Ignore most markdown files except essential ones
+*.md
+!README.md
+!LICENSE.md
+
+# Include only necessary files
+!dist/**
+!package.json

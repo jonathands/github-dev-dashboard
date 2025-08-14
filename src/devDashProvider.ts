@@ -77,7 +77,13 @@ export class devDashProvider {
                 await this._switchAccount();
                 break;
             case 'createIssue':
-                await this._createIssue(message.title, message.body, message.labels);
+                await this._createIssue(message.title, message.body, message.labels, message.assignees);
+                break;
+            case 'loadCollaborators':
+                await this._loadCollaborators();
+                break;
+            case 'checkoutIssueBranch':
+                await this._checkoutIssueBranch(message.issueNumber, message.branchName);
                 break;
             case 'loadLocal':
                 await this._loadLocalData();
@@ -276,7 +282,7 @@ export class devDashProvider {
         }
     }
 
-    private async _createIssue(title: string, body?: string, labels?: string[]) {
+    private async _createIssue(title: string, body?: string, labels?: string[], assignees?: string[]) {
         try {
             debugChannel.log('Creating new issue', { title });
             const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
@@ -305,7 +311,7 @@ export class devDashProvider {
                 return;
             }
 
-            const issue = await this.githubService.createIssue(repoInfo.owner, repoInfo.repo, title, body, labels);
+            const issue = await this.githubService.createIssue(repoInfo.owner, repoInfo.repo, title, body, labels, assignees);
             debugChannel.info(`Issue created successfully: #${issue.number}`);
             
             this._sendMessage({
@@ -516,6 +522,56 @@ export class devDashProvider {
         }
     }
 
+    private async _loadCollaborators() {
+        try {
+            debugChannel.log('Loading repository collaborators...');
+            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+            if (!workspaceFolder) {
+                debugChannel.warn('No workspace folder found');
+                return;
+            }
+
+            const repoInfo = await this.githubService.getRepositoryInfo(workspaceFolder.uri.fsPath);
+            if (!repoInfo) {
+                debugChannel.warn('No GitHub repository info found');
+                return;
+            }
+
+            const collaborators = await this.githubService.getRepositoryCollaborators(repoInfo.owner, repoInfo.repo);
+            
+            this._sendMessage({
+                type: 'collaboratorsLoaded',
+                collaborators
+            });
+            debugChannel.info(`Collaborators loaded: ${collaborators.length}`);
+        } catch (error) {
+            debugChannel.error('Error loading collaborators', error as Error);
+            this._sendMessage({
+                type: 'collaboratorsLoaded',
+                collaborators: []
+            });
+        }
+    }
+
+    private async _checkoutIssueBranch(issueNumber: number, branchName: string) {
+        try {
+            debugChannel.log('Checking out issue branch', { issueNumber, branchName });
+            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+            if (!workspaceFolder) {
+                debugChannel.warn('No workspace folder found for issue branch checkout');
+                vscode.window.showErrorMessage('No workspace folder found');
+                return;
+            }
+
+            await this.githubService.checkoutIssueBranch(workspaceFolder.uri.fsPath, branchName);
+            debugChannel.info(`Successfully created/checked out branch: ${branchName} for issue #${issueNumber}`);
+            vscode.window.showInformationMessage(`Created/checked out branch "${branchName}" for issue #${issueNumber}`);
+        } catch (error) {
+            debugChannel.error('Error checking out issue branch', error as Error);
+            vscode.window.showErrorMessage(`Error checking out branch: ${error}`);
+        }
+    }
+
     private async _switchAccount() {
         try {
             debugChannel.log('Attempting to switch GitHub account');
@@ -682,6 +738,13 @@ export class devDashProvider {
                     color: var(--vscode-descriptionForeground);
                     margin-bottom: 8px;
                 }
+                .item-preview {
+                    font-size: 0.85em;
+                    color: var(--vscode-descriptionForeground);
+                    margin: 6px 0;
+                    line-height: 1.4;
+                    font-style: italic;
+                }
                 .item-labels {
                     display: flex;
                     flex-wrap: wrap;
@@ -695,6 +758,30 @@ export class devDashProvider {
                     background-color: var(--vscode-badge-background);
                     color: var(--vscode-badge-foreground);
                 }
+                .priority-high {
+                    border-left: 4px solid #f85149;
+                    background-color: rgba(248, 81, 73, 0.1);
+                }
+                .priority-medium {
+                    border-left: 4px solid #fb8500;
+                    background-color: rgba(251, 133, 0, 0.1);
+                }
+                .priority-low {
+                    border-left: 4px solid #7c3aed;
+                    background-color: rgba(124, 58, 237, 0.1);
+                }
+                .author-info {
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    margin-bottom: 4px;
+                }
+                .author-avatar {
+                    width: 20px;
+                    height: 20px;
+                    border-radius: 50%;
+                    border: 1px solid var(--vscode-panel-border);
+                }
                 .loading {
                     text-align: center;
                     padding: 40px;
@@ -704,6 +791,16 @@ export class devDashProvider {
                     margin-top: 12px;
                     display: flex;
                     gap: 8px;
+                }
+                .checkout-buttons {
+                    display: flex;
+                    gap: 6px;
+                    margin-top: 8px;
+                }
+                .issue-actions {
+                    display: flex;
+                    gap: 6px;
+                    margin-top: 8px;
                 }
                 .action-btn {
                     padding: 4px 8px;
@@ -1121,11 +1218,42 @@ export class devDashProvider {
                             <label class="form-label" for="issue-labels">Labels</label>
                             <input type="text" id="issue-labels" class="form-input" placeholder="bug, enhancement, documentation (comma-separated)">
                         </div>
+                        <div class="form-group">
+                            <label class="form-label" for="issue-assignees">Assignees</label>
+                            <select id="issue-assignees" class="form-input" multiple size="4">
+                                <option value="">Loading collaborators...</option>
+                            </select>
+                            <small style="color: var(--vscode-descriptionForeground); margin-top: 4px; display: block;">Hold Ctrl/Cmd to select multiple assignees</small>
+                        </div>
                         <div class="modal-actions">
                             <button type="button" class="btn-secondary" onclick="closeCreateIssueModal()">Cancel</button>
                             <button type="submit" class="btn-primary">Create Issue</button>
                         </div>
                     </form>
+                </div>
+            </div>
+
+            <!-- Checkout Branch Dialog -->
+            <div id="checkout-dialog" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <span class="modal-title">Checkout Branch for Issue</span>
+                        <span class="close" onclick="closeCheckoutDialog()">&times;</span>
+                    </div>
+                    <div id="checkout-content">
+                        <p>Create and checkout a new branch for issue <strong id="checkout-issue-number"></strong>:</p>
+                        <div class="form-group">
+                            <label class="form-label" for="branch-name">Branch Name:</label>
+                            <input type="text" id="branch-name" class="form-input" placeholder="issue-123-feature-branch">
+                            <small style="color: var(--vscode-descriptionForeground); margin-top: 4px; display: block;">
+                                Use lowercase letters, numbers, and hyphens only
+                            </small>
+                        </div>
+                        <div class="modal-actions">
+                            <button type="button" class="btn-secondary" onclick="closeCheckoutDialog()">Cancel</button>
+                            <button type="button" class="btn-primary" onclick="confirmCheckout()">Checkout Branch</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1186,6 +1314,8 @@ export class devDashProvider {
                 function openCreateIssueModal() {
                     document.getElementById('create-issue-modal').style.display = 'block';
                     document.getElementById('issue-title').focus();
+                    // Load collaborators when opening the modal
+                    vscode.postMessage({ type: 'loadCollaborators' });
                 }
 
                 function closeCreateIssueModal() {
@@ -1214,6 +1344,7 @@ export class devDashProvider {
                     const title = document.getElementById('issue-title').value.trim();
                     const body = document.getElementById('issue-body').value.trim();
                     const labelsInput = document.getElementById('issue-labels').value.trim();
+                    const assigneeSelect = document.getElementById('issue-assignees');
                     
                     if (!title) {
                         alert('Issue title is required');
@@ -1221,15 +1352,80 @@ export class devDashProvider {
                     }
                     
                     const labels = labelsInput ? labelsInput.split(',').map(l => l.trim()).filter(l => l) : [];
+                    const assignees = Array.from(assigneeSelect.selectedOptions)
+                        .map(option => option.value)
+                        .filter(value => value && value !== '');
                     
                     vscode.postMessage({ 
                         type: 'createIssue', 
                         title: title,
                         body: body || undefined,
-                        labels: labels.length > 0 ? labels : undefined
+                        labels: labels.length > 0 ? labels : undefined,
+                        assignees: assignees.length > 0 ? assignees : undefined
                     });
                     
                     closeCreateIssueModal();
+                }
+
+                let currentCheckoutIssue = null;
+                let suggestedBranchName = null;
+
+                function openCheckoutDialog(issueNumber, defaultBranchName) {
+                    currentCheckoutIssue = issueNumber;
+                    suggestedBranchName = defaultBranchName;
+                    
+                    document.getElementById('checkout-issue-number').textContent = '#' + issueNumber;
+                    document.getElementById('branch-name').value = defaultBranchName;
+                    document.getElementById('checkout-dialog').style.display = 'block';
+                    document.getElementById('branch-name').focus();
+                    document.getElementById('branch-name').select();
+                }
+
+                function closeCheckoutDialog() {
+                    document.getElementById('checkout-dialog').style.display = 'none';
+                    currentCheckoutIssue = null;
+                    suggestedBranchName = null;
+                }
+
+                function confirmCheckout() {
+                    if (!currentCheckoutIssue) return;
+                    
+                    const branchName = document.getElementById('branch-name').value.trim();
+                    if (!branchName) {
+                        alert('Please enter a branch name');
+                        return;
+                    }
+                    
+                    // Validate branch name (basic validation)
+                    if (!/^[a-zA-Z0-9_\-\/]+$/.test(branchName)) {
+                        alert('Branch name contains invalid characters. Use only letters, numbers, hyphens, underscores, and forward slashes.');
+                        return;
+                    }
+                    
+                    vscode.postMessage({ 
+                        type: 'checkoutIssueBranch', 
+                        issueNumber: currentCheckoutIssue,
+                        branchName: branchName
+                    });
+                    
+                    closeCheckoutDialog();
+                }
+
+                function populateCollaborators(collaborators) {
+                    const select = document.getElementById('issue-assignees');
+                    select.innerHTML = '';
+                    
+                    if (collaborators.length === 0) {
+                        select.innerHTML = '<option value="">No collaborators found</option>';
+                        return;
+                    }
+                    
+                    collaborators.forEach(collaborator => {
+                        const option = document.createElement('option');
+                        option.value = collaborator.login;
+                        option.textContent = collaborator.login + ' (' + collaborator.type + ')';
+                        select.appendChild(option);
+                    });
                 }
 
                 function renderItems(items, containerId, type) {
@@ -1244,16 +1440,55 @@ export class devDashProvider {
                             '<span class="label">' + label.name + '</span>'
                         ).join('') : '';
 
-                        const actions = type === 'pull requests' ? 
-                            '<button class="action-btn" onclick="checkoutPR(' + item.number + ')">Checkout</button>' +
-                            '<button class="github-checkout-btn" onclick="checkoutPRGitHub(' + item.number + ')">GitHub Style</button>' : '';
+                        // Determine priority class based on labels
+                        let priorityClass = '';
+                        if (item.labels) {
+                            const priorityLabel = item.labels.find(label => 
+                                ['priority: high', 'high priority', 'urgent', 'critical'].includes(label.name.toLowerCase()) ||
+                                label.name.toLowerCase().includes('high')
+                            );
+                            if (priorityLabel) {
+                                priorityClass = 'priority-high';
+                            } else {
+                                const mediumLabel = item.labels.find(label => 
+                                    ['priority: medium', 'medium priority', 'normal'].includes(label.name.toLowerCase()) ||
+                                    label.name.toLowerCase().includes('medium')
+                                );
+                                if (mediumLabel) {
+                                    priorityClass = 'priority-medium';
+                                } else {
+                                    const lowLabel = item.labels.find(label => 
+                                        ['priority: low', 'low priority', 'minor'].includes(label.name.toLowerCase()) ||
+                                        label.name.toLowerCase().includes('low')
+                                    );
+                                    if (lowLabel) {
+                                        priorityClass = 'priority-low';
+                                    }
+                                }
+                            }
+                        }
+
+                        let actions = '';
+                        if (type === 'pull requests') {
+                            actions = '<div class="checkout-buttons">' +
+                                '<button class="action-btn" onclick="checkoutPR(' + item.number + ')">Checkout</button>' +
+                                '<button class="github-checkout-btn" onclick="checkoutPRGitHub(' + item.number + ')">GitHub Style</button>' +
+                            '</div>';
+                        } else if (type === 'issues') {
+                            actions = '<div class="issue-actions">' +
+                                '<button class="action-btn" onclick="openCheckoutDialog(' + item.number + ', \'issue-' + item.number + '\')">Checkout Branch</button>' +
+                            '</div>';
+                        }
 
                         const preview = item.body_preview ? '<div class="item-preview">' + item.body_preview + '</div>' : '';
                         
-                        return '<div class="item" onclick="viewDetails(' + JSON.stringify({...item, type: type === 'issues' ? 'issue' : 'pr'}).replace(/"/g, '&quot;') + ')">' +
+                        return '<div class="item ' + priorityClass + '" onclick="viewDetails(' + JSON.stringify({...item, type: type === 'issues' ? 'issue' : 'pr'}).replace(/"/g, '&quot;') + ')">' +
                             '<div class="item-title">#' + item.number + ' ' + item.title + '</div>' +
+                            '<div class="author-info">' +
+                                '<img class="author-avatar" src="' + item.user.avatar_url + '" alt="' + item.user.login + '" onerror="this.style.display=\'none\'">' +
+                                '<span>by ' + item.user.login + '</span>' +
+                            '</div>' +
                             '<div class="item-meta">' +
-                                'by ' + item.user.login + ' • ' + 
                                 new Date(item.created_at).toLocaleDateString() + ' • ' +
                                 item.state +
                             '</div>' +
@@ -1431,6 +1666,15 @@ export class devDashProvider {
                         renderLocalData(message.stashes, message.changes);
                     } else if (message.type === 'activityLoaded') {
                         renderActivity(message.activity);
+                    } else if (message.type === 'prDetailsLoaded') {
+                        // Handle PR details loaded in detail view
+                        console.log('PR details loaded:', message.prDetails);
+                    } else if (message.type === 'prCommentsLoaded') {
+                        // Handle PR comments loaded in detail view
+                        console.log('PR comments loaded:', message.comments);
+                    } else if (message.type === 'prCommentAdded') {
+                        // Handle new PR comment added
+                        console.log('PR comment added:', message.comment);
                     } else if (message.type === 'accessDenied') {
                         if (message.user) {
                             updateUserInfo(message.user);
@@ -1439,17 +1683,24 @@ export class devDashProvider {
                     } else if (message.type === 'authenticationError') {
                         document.getElementById('issues-grid').innerHTML = '<div class="access-denied"><h3>🔐 Authentication Error</h3><p>' + message.message + '</p><button class="refresh-btn" onclick="switchAccount()">Switch Account</button></div>';
                         document.getElementById('prs-grid').innerHTML = '<div class="loading">Authentication required</div>';
+                    } else if (message.type === 'collaboratorsLoaded') {
+                        populateCollaborators(message.collaborators);
                     }
                 });
 
                 // Set up form submission
                 document.getElementById('create-issue-form').addEventListener('submit', createIssue);
                 
-                // Close modal when clicking outside of it
+                // Close modals when clicking outside of them
                 window.addEventListener('click', function(event) {
-                    const modal = document.getElementById('create-issue-modal');
-                    if (event.target === modal) {
+                    const issueModal = document.getElementById('create-issue-modal');
+                    const checkoutModal = document.getElementById('checkout-dialog');
+                    
+                    if (event.target === issueModal) {
                         closeCreateIssueModal();
+                    }
+                    if (event.target === checkoutModal) {
+                        closeCheckoutDialog();
                     }
                 });
 

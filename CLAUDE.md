@@ -10,6 +10,9 @@ This is a VS Code extension that provides a comprehensive GitHub repository mana
 - **Issues Filtering**: Real-time search by title, author, labels, and status filtering
 - **Pull Requests**: Browse PRs and checkout branches locally with dual checkout options
 - **GitHub-style Checkout**: Enhanced PR checkout using GitHub CLI naming conventions
+- **Markdown Support**: Full GitHub-flavored markdown rendering for descriptions and comments
+- **PR Comments System**: View, add, and manage PR discussion threads and code reviews
+- **Copy PR Content**: One-click copy of entire PR with comments as structured markdown
 - **Repository Statistics**: Display stars, forks, watchers, and open issues count
 - **Recent Activity Feed**: Timeline of repository events, commits, and activities
 - **Local Git Operations**: Monitor git stashes and uncommitted file changes
@@ -99,6 +102,9 @@ Before finalizing updates:
 - ✅ Advanced GitHub integration with activity feeds
 - ✅ Issue management with creation and filtering
 - ✅ PR browsing with dual checkout modes (standard + GitHub CLI style)
+- ✅ Full GitHub-flavored markdown rendering support
+- ✅ Complete PR comments and discussion system
+- ✅ One-click copy of PR content with comments
 - ✅ Real-time search and filtering for Issues and PRs
 - ✅ Repository statistics display with activity timeline
 - ✅ Local git operations monitoring
@@ -107,5 +113,14 @@ Before finalizing updates:
 - ✅ Comprehensive documentation
 - ✅ Advanced filtering by title, author, labels, and status
 - ✅ Recent activity feed with events and commits
+- ✅ Sidebar integration with GitHub icon
+- ✅ Command palette and menu integration
+- ✅ Optimized package size and dependencies
 
-This extension provides a complete GitHub workflow integration for VS Code users, with advanced filtering, activity monitoring, enhanced PR checkout options, proper error handling, security measures, and extensible architecture for future enhancements.
+### 🔧 Installation & Usage
+- **Sidebar Access**: Look for "GitHub Dev Dashboard" in the Explorer sidebar
+- **Command Palette**: Use `Ctrl+Shift+P` → "Open GitHub Dev Dashboard"
+- **Editor Title**: Click the GitHub icon in any editor tab
+- **View Menu**: Access through VS Code's View menu
+
+This extension provides a complete GitHub workflow integration for VS Code users, with markdown support, comment management, advanced filtering, activity monitoring, enhanced PR checkout options, proper error handling, security measures, sidebar integration, and extensible architecture for future enhancements.

@@ -1,33 +1,37 @@
-# GitHub Dev Dashboard
+# GitHub Dev Dashboard for VS Code
 
-Objective:
+A comprehensive GitHub repository management dashboard that brings GitHub Issues, Pull Requests, and repository insights directly into VS Code.
 
-Build a VSCode github dashboard with the ability to manager mostly Issues and PRs, and facilitate some coding agent tasks
+![GitHub Dev Dashboard](https://img.shields.io/badge/VS%20Code-Extension-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Version](https://img.shields.io/badge/version-0.0.1-orange)
 
-#### Notice: I'm not affiliated with github, they have a great extension to manage issues, and another for actions
+> **Notice**: This is an independent extension not affiliated with GitHub. GitHub offers excellent official extensions for issues and actions management.
 
+## ✨ Completed Features
 
-# TODOs
-- [x] Support Account Switching
-- [x] List Repos existing stashes
-- [x] View unpushed local commit changes
-- [x] Allow for Easy creation of Issues from this Extensions UI
-- [ ] Support MD on descriptions
-- [ ] Allow for Comments and answers on PRs
-- [ ] Allow copying of descriptions and comment threads as a single entitly
-- [x] Allow checkout in github style PR branches
-- [x] Add filtering for Issues and PRs:  search by name, owner and status
-- [ ] Allow the user to automatically see if a PR branch for the  Issue exists locally or remotely
-- [ ] Allow PR Approval, Merging and Rejection
-- [x] Show Stars, forks, watchers 
-- [x] Show recent activity.
-- [ ] View and run github actions
-- [ ] Fix workaround I made when resolving repo/owner from alias
-- [ ] Publish to Extension Archive
-- [ ] Add command to copy all open tabs absolute OR relative paths
-- [ ] Add command to copy the paths of all files in the Source Control Window
-- [ ] Add a tab with documentation of the dashboards features
-- [ ] Wakatime integration ?
+- ✅ **Support Account Switching**: Multi-user GitHub account management
+- ✅ **List Repos Existing Stashes**: View all git stashes
+- ✅ **View Unpushed Local Commit Changes**: Monitor uncommitted files
+- ✅ **Easy Issue Creation**: Create GitHub issues from extension UI
+- ✅ **Support MD on Descriptions**: Full GitHub-flavored markdown rendering
+- ✅ **Comments and Answers on PRs**: Complete PR discussion system
+- ✅ **Copy Descriptions and Comment Threads**: Export PR content as markdown
+- ✅ **GitHub Style PR Branches**: Enhanced PR checkout with GitHub CLI conventions
+- ✅ **Filtering for Issues and PRs**: Search by name, author, status
+- ✅ **Show Stars, Forks, Watchers**: Repository statistics display
+- ✅ **Show Recent Activity**: Timeline of repository events and commits
+- ✅ **Documentation Tab**: In-app feature documentation
+
+## 🚧 Future Roadmap
+
+- [ ] **PR Branch Detection**: See if PR branches exist locally or remotely
+- [ ] **PR Actions**: Approval, merging, and rejection capabilities
+- [ ] **GitHub Actions Integration**: View and run workflows
+- [ ] **Repository Alias Resolution**: Improve remote detection
+- [ ] **Marketplace Publishing**: Official VS Code extension store
+- [ ] **File Path Utilities**: Copy open tabs and source control paths
+- [ ] **Wakatime Integration**: Development time tracking
 ## Features
 
 - 📋 **Grid View**: Display issues and PRs in a responsive grid layout in the main window

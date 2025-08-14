@@ -244,19 +244,20 @@ export class GitHubService {
         }
     }
 
-    async createIssue(owner: string, repo: string, title: string, body?: string, labels?: string[]): Promise<any> {
+    async createIssue(owner: string, repo: string, title: string, body?: string, labels?: string[], assignees?: string[]): Promise<any> {
         if (!(await this.ensureAuthenticated())) {
             throw new Error('GitHub authentication failed');
         }
 
         try {
-            debugChannel.log('Creating issue', { owner, repo, title });
+            debugChannel.log('Creating issue', { owner, repo, title, assignees });
             const response = await this.octokit!.rest.issues.create({
                 owner,
                 repo,
                 title,
                 body: body || '',
-                labels: labels || []
+                labels: labels || [],
+                assignees: assignees || []
             });
 
             debugChannel.info(`Created issue #${response.data.number}: ${title}`);
@@ -264,6 +265,28 @@ export class GitHubService {
         } catch (error) {
             debugChannel.error('Error creating issue', error as Error);
             throw error;
+        }
+    }
+
+    async getRepositoryCollaborators(owner: string, repo: string): Promise<any[]> {
+        if (!(await this.ensureAuthenticated())) {
+            throw new Error('GitHub authentication failed');
+        }
+
+        try {
+            debugChannel.log('Fetching repository collaborators', { owner, repo });
+            const response = await this.octokit!.rest.repos.listCollaborators({
+                owner,
+                repo,
+                per_page: 100
+            });
+
+            debugChannel.info(`Fetched ${response.data.length} collaborators`);
+            return response.data;
+        } catch (error) {
+            debugChannel.error('Error fetching collaborators', error as Error);
+            // If we can't fetch collaborators, return empty array
+            return [];
         }
     }
 
@@ -304,7 +327,12 @@ export class GitHubService {
                 cwd: workspacePath,
                 encoding: 'utf8',
                 stdio: 'pipe'
-            });
+            }).toString();
+
+            if (!stashOutput || stashOutput.trim() === '') {
+                debugChannel.info('No stashes found');
+                return [];
+            }
 
             const stashes = stashOutput.trim().split('\n').filter(line => line.length > 0);
             debugChannel.info(`Found ${stashes.length} stashes`);
@@ -322,11 +350,16 @@ export class GitHubService {
                 cwd: workspacePath,
                 encoding: 'utf8',
                 stdio: 'pipe'
-            });
+            }).toString();
 
             const staged: string[] = [];
             const modified: string[] = [];
             const untracked: string[] = [];
+
+            if (!statusOutput || statusOutput.trim() === '') {
+                debugChannel.info('No uncommitted changes found');
+                return { staged, modified, untracked };
+            }
 
             statusOutput.trim().split('\n').forEach(line => {
                 if (line.length === 0) return;
@@ -613,11 +646,11 @@ export class GitHubService {
             // Configure marked for GitHub-flavored markdown
             marked.setOptions({
                 gfm: true,
-                breaks: true,
-                sanitize: false // We'll handle sanitization in the webview
+                breaks: true
             });
             
-            return marked(text);
+            const result = marked.parse(text);
+            return typeof result === 'string' ? result : text;
         } catch (error) {
             debugChannel.error('Error rendering markdown', error as Error);
             return text; // Fallback to plain text
@@ -656,8 +689,8 @@ export class GitHubService {
         content += `**Status:** ${pr.state}\n`;
         content += `**Branch:** ${pr.head.ref} → ${pr.base.ref}\n\n`;
         
-        if (pr.description_text) {
-            content += `## Description\n\n${pr.description_text}\n\n`;
+        if (pr.body) {
+            content += `## Description\n\n${pr.body}\n\n`;
         }
 
         if (comments.length > 0) {
@@ -667,7 +700,7 @@ export class GitHubService {
                 if (comment.comment_type === 'review') {
                     content += `*Code Review Comment*\n`;
                 }
-                content += `${comment.body}\n\n---\n\n`;
+                content += `${comment.body || ''}\n\n---\n\n`;
             });
         }
 
@@ -737,6 +770,54 @@ export class GitHubService {
 
         } catch (error) {
             debugChannel.error('Error checking out PR', error as Error);
+            throw error;
+        }
+    }
+
+    async checkoutIssueBranch(workspacePath: string, branchName: string): Promise<void> {
+        try {
+            debugChannel.log('Creating and checking out issue branch', { workspacePath, branchName });
+            
+            // Check if we're in a git repository
+            try {
+                execSync('git rev-parse --git-dir', { 
+                    cwd: workspacePath,
+                    stdio: 'pipe'
+                });
+            } catch (error) {
+                throw new Error('Not in a git repository');
+            }
+
+            // Check if branch already exists
+            let branchExists = false;
+            try {
+                execSync(`git show-ref --verify --quiet refs/heads/${branchName}`, {
+                    cwd: workspacePath,
+                    stdio: 'pipe'
+                });
+                branchExists = true;
+            } catch (error) {
+                // Branch doesn't exist, which is fine
+            }
+
+            if (branchExists) {
+                // Branch exists, just checkout
+                execSync(`git checkout ${branchName}`, {
+                    cwd: workspacePath,
+                    stdio: 'pipe'
+                });
+                debugChannel.info(`Checked out existing branch: ${branchName}`);
+            } else {
+                // Create and checkout new branch
+                execSync(`git checkout -b ${branchName}`, {
+                    cwd: workspacePath,
+                    stdio: 'pipe'
+                });
+                debugChannel.info(`Created and checked out new branch: ${branchName}`);
+            }
+
+        } catch (error) {
+            debugChannel.error('Error creating/checking out issue branch', error as Error);
             throw error;
         }
     }
